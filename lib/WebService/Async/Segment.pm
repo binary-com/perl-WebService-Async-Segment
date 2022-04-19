@@ -11,6 +11,7 @@ use JSON::MaybeUTF8 qw(encode_json_utf8 decode_json_utf8);
 use Syntax::Keyword::Try;
 use Log::Any qw($log);
 use Time::Moment;
+use Future::AsyncAwait;
 
 use parent qw(IO::Async::Notifier);
 
@@ -164,7 +165,7 @@ It returns a L<Future> object.
 
 =cut
 
-sub method_call {
+async sub method_call {
     my ($self, $method, %args) = @_;
 
     $args{sent_at} ||= Time::Moment->now_utc->to_string();
@@ -180,7 +181,9 @@ sub method_call {
 
     $log->tracef('Segment method %s called with params %s', $method, \%args);
 
-    return $self->ua->POST(
+    await $self->loop->later;
+
+    return await $self->ua->POST(
         URI->new_abs($method, $self->base_uri),
         encode_json_utf8(\%args),
         content_type => 'application/json',
